@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wether72</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .weather-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .weather-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #00b4d8, #0077b6);
+        }
+
+        .weather-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .weather-card h2 {
+            color: #1e3c72;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+            border-bottom: 2px solid #2a5298;
+            padding-bottom: 10px;
+        }
+
+        .weather-icon {
+            width: 80px;
+            height: 80px;
+            margin: 10px auto;
+        }
+
+        .temperature {
+            font-size: 3em;
+            font-weight: bold;
+            color: #1e3c72;
+            margin: 10px 0;
+        }
+
+        .description {
+            font-size: 1.2em;
+            color: #555;
+            text-transform: capitalize;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .details div {
+            background: rgba(30, 60, 114, 0.1);
+            padding: 8px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.5em;
+            padding: 50px;
+        }
+
+        .error {
+            text-align: center;
+            color: #ff6b6b;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #ff6b6b;
+        }
+
+        .last-updated {
+            text-align: center;
+            color: white;
+            margin-top: 20px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .api-note {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .api-note a {
+            color: #ffd700;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .api-note a:hover {
+            text-decoration: underline;
+        }
+
+        .refresh-button {
+            display: block;
+            margin: 20px auto;
+            padding: 12px 40px;
+            background: white;
+            color: #1e3c72;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid white;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .refresh-button:hover {
+            background: transparent;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .city-count {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 10px 25px;
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+            
+            .weather-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .stat-item {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌤️ Wether72</h1>
+        <div class="subtitle">Тюмень и другие города нашей необъятной родины</div>
+        
+  
+
+        <div class="stats">
+            <div class="stat-item">🏙️ Всего городов: 15</div>
+            <div class="stat-item">🕒 Обновление каждые 10 минут</div>
+        </div>
+        
+        <button class="refresh-button" onclick="fetchAllWeather()">
+            🔄 Обновить все данные
+        </button>
+        
+        <div id="weatherGrid" class="weather-grid">
+            <!-- Карточки будут добавлены через JavaScript -->
+        </div>
+        
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            Загрузка данных о погоде...
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="lastUpdated" class="last-updated"></div>
+    </div>
+
+    <script>
+        // ⚠️ ВСТАВЬТЕ ВАШ API КЛЮЧ СЮДА ⚠️
+        const API_KEY = '249f12c4f7488f676b40dc7e73800491'; // Замените на ваш реальный ключ
+        
+        // Список 15 городов России с их ID из OpenWeatherMap
+        const cities = [
+            // Центральная Россия
+            { id: 524901, name: 'Москва', region: 'Центр' },
+            { id: 498817, name: 'Санкт-Петербург', region: 'Северо-Запад' },
+            { id: 6417690, name: 'Тула', region: 'Центр' },
+            { id: 472045, name: 'Волгоград', region: 'Юг' },
+            
+            // Урал и Сибирь
+            { id: 1486209, name: 'Тюмень', region: 'Урал' }, // Тюмень (как вы просили)
+            { id: 1503901, name: 'Екатеринбург', region: 'Урал' },
+            { id: 1496747, name: 'Новосибирск', region: 'Сибирь' },
+            { id: 1502026, name: 'Красноярск', region: 'Сибирь' },
+            { id: 1510853, name: 'Омск', region: 'Сибирь' },
+            
+            // Поволжье
+            { id: 551487, name: 'Казань', region: 'Поволжье' },
+            { id: 520555, name: 'Нижний Новгород', region: 'Поволжье' },
+            { id: 554234, name: 'Самара', region: 'Поволжье' },
+            { id: 569223, name: 'Саратов', region: 'Поволжье' },
+            
+            // Дальний Восток и Юг
+            { id: 2022570, name: 'Иркутск', region: 'Восточная Сибирь' },
+            { id: 2123628, name: 'Владивосток', region: 'Дальний Восток' },
+            { id: 501175, name: 'Ростов-на-Дону', region: 'Юг' }
+        ];
+
+        // Сортировка городов по алфавиту для удобства
+        cities.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+
+        // Проверка наличия API ключа
+        if (API_KEY === 'YOUR_API_KEY_HERE') {
+            showError('⚠️ Пожалуйста, вставьте ваш API ключ OpenWeatherMap в переменную API_KEY в коде сайта (строка 191)');
+        } else {
+            // Загружаем погоду при загрузке страницы
+            document.addEventListener('DOMContentLoaded', fetchAllWeather);
+        }
+
+        async function fetchAllWeather() {
+            showLoading();
+            hideError();
+            
+            const weatherGrid = document.getElementById('weatherGrid');
+            weatherGrid.innerHTML = '';
+            
+            let successCount = 0;
+            let errors = [];
+            let regions = new Set();
+            
+            // Загружаем данные для всех городов
+            const promises = cities.map(async (city) => {
+                try {
+                    const weather = await fetchWeather(city.id);
+                    if (weather) {
+                        displayWeatherCard(weather, city);
+                        successCount++;
+                        regions.add(city.region);
+                    } else {
+                        errors.push(city.name);
+                    }
+                } catch (error) {
+                    console.error(`Ошибка загрузки для города ${city.name}:`, error);
+                    errors.push(city.name);
+                }
+            });
+            
+            await Promise.all(promises);
+            
+            hideLoading();
+            
+            if (successCount === 0) {
+                showError('❌ Не удалось загрузить данные о погоде. Проверьте ваш API ключ.');
+            } else if (successCount < cities.length) {
+                showError(`⚠️ Загружены данные для ${successCount} из ${cities.length} городов. Ошибки: ${errors.join(', ')}`);
+            } else {
+                // Показываем успешное сообщение в консоли
+                console.log(`✅ Успешно загружена погода для ${successCount} городов из ${regions.size} регионов`);
+            }
+            
+            updateLastUpdated();
+        }
+
+        async function fetchWeather(cityId) {
+            try {
+                // Проверяем, не используется ли ключ-заглушка
+                if (API_KEY === 'YOUR_API_KEY_HERE') {
+                    throw new Error('API ключ не указан');
+                }
+                
+                const url = `https://api.openweathermap.org/data/2.5/weather?id=${cityId}&appid=${API_KEY}&units=metric&lang=ru`;
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Неверный API ключ');
+                    } else if (response.status === 404) {
+                        throw new Error('Город не найден');
+                    } else {
+                        throw new Error(`Ошибка HTTP: ${response.status}`);
+                    }
+                }
+                
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Ошибка при получении данных:', error);
+                return null;
+            }
+        }
+
+        function displayWeatherCard(data, cityInfo) {
+            const weatherGrid = document.getElementById('weatherGrid');
+            
+            const card = document.createElement('div');
+            card.className = 'weather-card';
+            
+            // Получаем иконку погоды
+            const iconCode = data.weather[0].icon;
+            const iconUrl = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+            
+            // Форматируем данные
+            const temp = Math.round(data.main.temp);
+            const feelsLike = Math.round(data.main.feels_like);
+            const description = data.weather[0].description;
+            const humidity = data.main.humidity;
+            const windSpeed = data.wind.speed;
+            const pressure = Math.round(data.main.pressure * 0.750062); // Конвертируем гПа в мм рт. ст.
+            
+            // Определяем цвет для региона
+            const regionColors = {
+                'Центр': '#e74c3c',
+                'Северо-Запад': '#3498db',
+                'Юг': '#e67e22',
+                'Урал': '#2ecc71',
+                'Сибирь': '#9b59b6',
+                'Поволжье': '#f1c40f',
+                'Восточная Сибирь': '#1abc9c',
+                'Дальний Восток': '#e84393'
+            };
+            
+            const regionColor = regionColors[cityInfo.region] || '#95a5a6';
+            
+            card.innerHTML = `
+                <h2>${cityInfo.name}</h2>
+                <div style="font-size: 0.8em; color: ${regionColor}; margin-bottom: 5px; font-weight: bold;">
+                    📍 ${cityInfo.region}
+                </div>
+                <div class="weather-icon">
+                    <img src="${iconUrl}" alt="${description}" style="width: 100%; height: 100%;">
+                </div>
+                <div class="temperature">${temp}°C</div>
+                <div class="description">${description}</div>
+                <div class="details">
+                    <div>🌡️ Ощущается: ${feelsLike}°C</div>
+                    <div>💧 Влажность: ${humidity}%</div>
+                    <div>💨 Ветер: ${windSpeed} м/с</div>
+                    <div>📊 Давление: ${pressure} мм рт.ст.</div>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.7em; color: #999; text-align: center;">
+                    👆 Нажмите для обновления
+                </div>
+            `;
+            
+            // Добавляем обработчик клика для обновления конкретного города
+            card.addEventListener('click', async () => {
+                showLoading();
+                const updatedData = await fetchWeather(data.id);
+                if (updatedData) {
+                    // Создаем новую карточку и удаляем старую
+                    displayWeatherCard(updatedData, cityInfo);
+                    card.remove();
+                }
+                hideLoading();
+            });
+            
+            weatherGrid.appendChild(card);
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('weatherGrid').style.opacity = '0.5';
+            document.getElementById('weatherGrid').style.pointerEvents = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('weatherGrid').style.opacity = '1';
+            document.getElementById('weatherGrid').style.pointerEvents = 'auto';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = message;
+            
+            // Показываем подсказку в консоли
+            console.warn('Ошибка погоды:', message);
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+
+        function updateLastUpdated() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ru-RU', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            const dateString = now.toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+            document.getElementById('lastUpdated').textContent = `Последнее обновление: ${dateString} в ${timeString}`;
+        }
+
+        // Автоматическое обновление каждые 10 минут (только если ключ указан)
+        setInterval(() => {
+            if (API_KEY !== 'YOUR_API_KEY_HERE') {
+                fetchAllWeather();
+            }
+        }, 600000);
+
+        // Добавляем стили для спиннера загрузки
+        const style = document.createElement('style');
+        style.textContent = `
+            .spinner {
+                border: 4px solid rgba(255, 255, 255, 0.3);
+                border-radius: 50%;
+                border-top: 4px solid white;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+                margin: 20px auto;
+            }
+            
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
